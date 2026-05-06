@@ -8,7 +8,10 @@ app.use(express.json());
 
 const authRoutes = require("./src/routes/auth.route");
 const postRoutes = require("./src/routes/post.route");
+const commentRoutes = require("./src/routes/comment.route");
 
 app.use("/api/auth",authRoutes)
-app.use("/api/posts",postRoutes);
+app.use("/api/publication/posts",postRoutes);
+app.use("/api/comments",commentRoutes);
+
 module.exports = app;

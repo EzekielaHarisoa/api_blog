@@ -5,6 +5,9 @@ exports.createPost = async (req, res) => {
     try {
         const {title, content} = req.body;
         const userId = req.user.id;
+        if (!title || !title.trim() || !content || !content.trim()) {
+          return res.status(400).json({ message: "Titre et contenu sont obligatoires" });
+       }
 
         await pool.query("insert into posts (title, content, user_id) values ($1, $2, $3)", [title, content, userId]);
         res.status(201).json({message: "Post créé avec succès"});
@@ -51,22 +54,33 @@ exports.deletePost = async (req,res)=>{
         }
 
         const post = postResult.rows[0];
-        if(post.userId !== userId){
+        if(post.user_id!== userId){
             return res.status(403).json({message: "Accès refusé"});
         }
+
         await pool.query("delete from posts where id = $1", [id]);
         res.status(200).json({message: "Post supprimé avec succès"});
+
     } catch (error) {
         console.error("Erreur lors de la suppression du post:", error);
         res.status(500).json({message: "Erreur du serveur"});
     }
 }
 
-// affichage de tous les posts
+// affichage de tous les posts avec pagination
 exports.getAllPosts = async (req,res) => {
     try {
-        const postsResult = await pool.query("select * from posts");
-        res.status(200).json({posts: postsResult.rows});
+        let  {limit, page} = req.query;
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10;
+        const offset  = (page -1) * limit;
+        
+        const postsResult = await pool.query("select * from posts order by created_at desc limit $1 offset $2", [limit, offset]);
+        res.status(200).json({
+            page, 
+            limit,
+            data: postsResult.rows
+        });
     } catch (error) {
         console.error("Erreur lors de la récupération des posts:", error);
         res.status(500).json({message: "Erreur du serveur"});
@@ -77,6 +91,7 @@ exports.getAllPosts = async (req,res) => {
 exports.getPostById = async (req,res) => {
     try {
         const {id} = req.params;
+        console.log("req.params =", req.params);
         const postResult = await pool.query("select * from posts where id = $1", [id]);
 
         if(postResult.rows.length === 0){
