@@ -1,6 +1,6 @@
 const pool = require("../config/db")
 const bcrypt = require("bcrypt");
-
+const jwt = require("jsonwebtoken");
 //creation d'un user
 exports.register =async  (req, res) => {
    try {
@@ -12,7 +12,7 @@ exports.register =async  (req, res) => {
     }
 
     const hashedPassword  = await bcrypt.hash(password, 10);
-    await pool.query("insert into users (username, email, password) values ($1, $2, $3)", [username, email, hashedPassword]);
+    await pool.query("insert into users (name, email, password) values ($1, $2, $3)", [username, email, hashedPassword]);
     res.status(201).json({message: "Utilisateur enregistré avec succès"});
 
    } catch (error) {
@@ -41,8 +41,9 @@ exports.login = async (req, res) => {
         if(!isPasswordValid){
             return res.status(400).json({message : "email ou mot de pass incoreact"});
         }
-        res.status(200).json({message: "Connexion réussie"});
-        
+        const token = jwt.sign({id : user.id, email :user.email}, process.env.JWT_SECRET, {expiresIn:"1d"})
+        res.status(200).json({message: "Connexion réussie", token});
+
 
     } catch (error) {
         console.error("Erreur lors de la connexion de l'utilisateur:", error);
