@@ -103,3 +103,29 @@ exports.getPostById = async (req,res) => {
         res.status(500).json({message: "Erreur du serveur"});
     }
 }
+
+//chercher un post
+exports.searchPosts = async (req,res)=>{
+    try {
+
+        let {limit, page}= req.query;
+        page = parseInt(page)|| 1;
+        limit = parseInt(limit) || 10;
+
+        if(limit > 50 )limit=10;
+        if(page < 1)page=1;
+
+        const offset = (page - 1 )*limit;
+
+        const {query} = req.query;
+        if(!query || !query.trim()){
+            return res.status(400).json({message: "Le paramètre de recherche est obligatoire"});
+        }
+
+        const searchResult = await pool.query("select * from posts where title ilike $1 or content ilike $2 order by created_at desc limit $3 offset $4", [`%${query}%`, `%${query}%`,limit, offset]);
+        res.status(200).json({ limit, page ,data: searchResult.rows});
+    } catch (error) {
+        console.error("Erreur lors de la recherche des posts:", error);
+        res.status(500).json({message: "Erreur du serveur"});
+    }
+}
