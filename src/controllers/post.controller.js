@@ -129,3 +129,61 @@ exports.searchPosts = async (req,res)=>{
         res.status(500).json({message: "Erreur du serveur"});
     }
 }
+
+//cherher les posts d'un utilisateur
+exports.getAllPostByUser = async (req, res)=>{
+    try {
+        let {limit,page} = req.query;
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10;
+
+        if( page < 1 ) page = 1;
+        if( limit > 50 ) limit = 50;
+
+        const {query} = req.query;
+        if(!query|| query.trim() ===""){
+           return res.status(400).json({message:"Le parametre de recherche est obligatoire"})
+        }
+
+        const offset = (page - 1)*limit;
+        const queryResult = await pool.query(`select posts.title, posts.content, users.name from posts
+                                            join users on posts.user_id = users.id where users.name ilike $1 
+                                            order by posts.created_at desc limit $2 offset $3  `, [`%${query}%` , limit, offset])
+        res.status(200).json({page,limit,data:queryResult.rows})                                    
+ 
+    } catch (error) {exercice
+        console.log("erreur lors de la recherche des post par auteur"+ error)
+        res.status(500).json({message:"erreur interne du serveur"})
+    }
+}
+
+//tri , recherche en meme temps
+exports.filtre = async (req,res)=>{
+    try {
+        let  {author,title,limit,page}=req.query
+        page = parseInt(page) || 1;
+        limit = parseInt(limit) || 10;
+        let {sort} =req.query;
+        sort= ( sort || "desc").toLowerCase();
+        const order= sort==="ASC" ? "ASC":"DESC";
+        if(!["ASC","DESC"].includes(sort)){
+            return res.status(400).json({message:"Le parametre de tri doit être 'asc' ou 'desc'"})
+        }
+        if( page < 1 ) page = 1;
+        if( limit > 50 ) limit = 50;
+
+        if((!title|| title.trim() ==="")&&(!author || author.trim() ==="")){
+           return res.status(400).json({message:"Le parametre de recherche est obligatoire"})
+        }
+        const offset = (page - 1)*limit;
+        const trieResult = await pool.query(`select posts.title, posts.content, users.name from posts
+                                            join users on posts.user_id = users.id where posts.title ilike $1 and users.name ilike $2 
+                                            order by posts.created_at ${order} limit $3 offset $4 `,[`%${title || ""}%`,`%${author || ""}%`, limit,offset])
+
+        res.status(200).json({page,limit,data:trieResult.rows});                                    
+
+    } catch (error) {
+       console.log("erreur lors de la trie et la recherhce"+ error)
+       res.status(500).json({message:"erreur interne du serveur"}) 
+    }
+    }
