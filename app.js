@@ -5,6 +5,7 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({extended: true}));
 
 const authRoutes = require("./src/routes/auth.route");
 const postRoutes = require("./src/routes/post.route");

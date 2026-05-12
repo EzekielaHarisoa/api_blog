@@ -68,25 +68,43 @@ exports.deletePost = async (req,res)=>{
 }
 
 // affichage de tous les posts avec pagination
-exports.getAllPosts = async (req,res) => {
-    try {
-        let  {limit, page} = req.query;
-        page = parseInt(page) || 1;
-        limit = parseInt(limit) || 10;
-        const offset  = (page -1) * limit;
-        
-        const postsResult = await pool.query("select * from posts order by created_at desc limit $1 offset $2", [limit, offset]);
-        res.status(200).json({
-            page, 
-            limit,
-            data: postsResult.rows
-        });
-    } catch (error) {
-        console.error("Erreur lors de la récupération des posts:", error);
-        res.status(500).json({message: "Erreur du serveur"});
-    }
-}
+exports.getAllPosts = async (req, res) => {
+  try {
+    let { limit, page } = req.query;
 
+    page = parseInt(page) || 1;
+    limit = parseInt(limit) || 10;
+
+    const offset = (page - 1) * limit;
+
+    const postsResult = await pool.query(
+      `
+      SELECT 
+        posts.id,
+        posts.title,
+        posts.content,
+        posts.created_at,
+        posts.user_id,
+        users.name AS author
+      FROM posts
+      JOIN users ON users.id = posts.user_id
+      ORDER BY posts.created_at DESC
+      LIMIT $1 OFFSET $2
+      `,
+      [limit, offset]
+    );
+
+    res.status(200).json({
+      page,
+      limit,
+      data: postsResult.rows,
+    });
+
+  } catch (error) {
+    console.error("Erreur getAllPosts:", error);
+    res.status(500).json({ message: "Erreur du serveur" });
+  }
+};
 // affichage d'un post
 exports.getPostById = async (req,res) => {
     try {

@@ -4,7 +4,9 @@ const jwt = require("jsonwebtoken");
 //creation d'un user
 exports.register =async  (req, res) => {
    try {
-    const {username, email, password} = req.body;
+        console.log("BODY =", req.body);
+
+    const {name, email, password} = req.body;
     const userExist = await pool.query( "select * from users where email = $1", [email] );
 
     if(userExist.rows.length > 0){
@@ -12,7 +14,7 @@ exports.register =async  (req, res) => {
     }
 
     const hashedPassword  = await bcrypt.hash(password, 10);
-    await pool.query("insert into users (name, email, password) values ($1, $2, $3)", [username, email, hashedPassword]);
+    await pool.query("insert into users (name, email, password) values ($1, $2, $3)", [name, email, hashedPassword]);
     res.status(201).json({message: "Utilisateur enregistré avec succès"});
 
    } catch (error) {
@@ -26,7 +28,7 @@ exports.register =async  (req, res) => {
 exports.login = async (req, res) => {
     try {
         const {email, password} = req.body;
-        const userResult = await pool.query("select * from users where email = $1", [email]);
+        const userResult = await pool.query("select * from users where email = $1 ", [email]);
 
         if(userResult.rows.length ===0 ){
             return res.status(400).json({message : "email ou mot de pass incoreact"});

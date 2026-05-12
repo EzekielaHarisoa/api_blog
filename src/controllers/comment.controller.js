@@ -11,7 +11,7 @@ try {
     }
 
     await pool.query("insert into comments (content, user_id, post_id) values ($1, $2, $3)", [content, user_id, postId]);
-    res.status(201).json({message: "Commentaire créé avec succès"});
+    res.status(201).json({message: "Commentaire créé avec succès",content, user_id, postId});
 
 } catch (error) {
     console.error("Erreur lors de la création du commentaire:", error);
