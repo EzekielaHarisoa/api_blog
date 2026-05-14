@@ -72,6 +72,8 @@ exports.getAllPosts = async (req, res) => {
   try {
     let { limit, page } = req.query;
 
+    const userId = req.user.id; 
+
     page = parseInt(page) || 1;
     limit = parseInt(limit) || 10;
 
@@ -85,13 +87,29 @@ exports.getAllPosts = async (req, res) => {
         posts.content,
         posts.created_at,
         posts.user_id,
-        users.name AS author
+        users.name AS author,
+
+        -- total likes
+        COUNT(distinct likes.id) AS likes_count,
+        COUNT(DISTINCT comments.id) AS comments_count,
+
+        -- si l'utilisateur a liké
+        EXISTS (
+          SELECT 1 FROM likes
+          WHERE likes.post_id = posts.id
+          AND likes.user_id = $3
+        ) AS liked
+
       FROM posts
       JOIN users ON users.id = posts.user_id
+      LEFT JOIN likes ON likes.post_id = posts.id
+      LEFT JOIN comments ON comments.post_id = posts.id
+      
+      GROUP BY posts.id, users.name
       ORDER BY posts.created_at DESC
       LIMIT $1 OFFSET $2
       `,
-      [limit, offset]
+      [limit, offset, userId]
     );
 
     res.status(200).json({

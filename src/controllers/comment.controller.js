@@ -75,9 +75,21 @@ exports.deleteComment = async (req,res)=>{
 exports.getAllCommentsByPost = async(req,res)=>{
     try {
         const {postId} = req.params;
-        const commentResult = await pool.query("select comments.id, comments.content, comments.created_at, users.name from comments " + 
-            "join users on comments.user_id = users.id  where comments.post_id = $1"
-            +" order by comments.created_at desc", [postId]);
+
+     const commentResult = await pool.query(
+  `
+  SELECT 
+    comments.id,
+    comments.content,
+    comments.created_at,
+    users.name
+  FROM comments
+  JOIN users ON comments.user_id = users.id
+  WHERE comments.post_id = $1
+  ORDER BY comments.created_at DESC
+  `,
+  [postId]
+);
         res.status(200).json(commentResult.rows);
 
     } catch (error) {

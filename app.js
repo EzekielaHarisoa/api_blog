@@ -10,9 +10,11 @@ app.use(express.urlencoded({extended: true}));
 const authRoutes = require("./src/routes/auth.route");
 const postRoutes = require("./src/routes/post.route");
 const commentRoutes = require("./src/routes/comment.route");
+const likeRoutes = require("./src/routes/like.route");
 
 app.use("/api/auth",authRoutes)
 app.use("/api/posts",postRoutes);
 app.use("/api/comments",commentRoutes);
+app.use("/api/likes",likeRoutes);
 
 module.exports = app;
