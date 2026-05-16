@@ -33,18 +33,18 @@ exports.login = async (req, res) => {
         if(userResult.rows.length ===0 ){
             return res.status(400).json({message : "email ou mot de pass incoreact"});
         }
-        // const user = userResult.rows[0];
-        // if(!user){
-        //     return res.status(400).json({message : "utilisater introuvable"});
-        // }
+        
         const user = userResult.rows[0];
+
         const isPasswordValid = await bcrypt.compare(password, user.password);
         
         if(!isPasswordValid){
             return res.status(400).json({message : "email ou mot de pass incoreact"});
         }
         const token = jwt.sign({id : user.id, email :user.email}, process.env.JWT_SECRET, {expiresIn:"1d"})
-        res.status(200).json({message: "Connexion réussie", token});
+        delete user.password;
+
+        res.status(200).json({message: "Connexion réussie", token,user});
 
 
     } catch (error) {

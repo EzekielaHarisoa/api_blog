@@ -76,12 +76,13 @@ exports.getAllCommentsByPost = async(req,res)=>{
     try {
         const {postId} = req.params;
 
-     const commentResult = await pool.query(
+const commentResult = await pool.query(
   `
   SELECT 
     comments.id,
     comments.content,
     comments.created_at,
+    comments.user_id,
     users.name
   FROM comments
   JOIN users ON comments.user_id = users.id
