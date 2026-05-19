@@ -36,13 +36,12 @@ exports.updateProfile  = async (req,res)=>{
 exports.updateUserAvatar = async (req, res) => {
   try {
     const userId = req.user.id;
-
+    
     if (!req.file) {
       return res.status(400).json({ message: "Aucune image envoyée" });
     }
 
-    const avatarUrl = `/uploads/${req.file.filename}`;
-
+    const avatarUrl = `${req.protocol}://${req.get("host")}/uploads/${req.file.filename}`;
     const result = await pool.query(
       `
       UPDATE users
@@ -52,9 +51,9 @@ exports.updateUserAvatar = async (req, res) => {
       `,
       [avatarUrl, userId]
     );
-
+    console.log("mis à jour avatar reussi")
     return res.status(200).json(result.rows[0]);
-
+    
   } catch (error) {
     console.error(error);
     return res.status(500).json({

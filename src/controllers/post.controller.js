@@ -12,6 +12,8 @@ exports.createPost = async (req, res) => {
         await pool.query("insert into posts (title, content, user_id) values ($1, $2, $3)", [title, content, userId]);
         res.status(201).json({message: "Post créé avec succès"});
 
+
+
     } catch (error) {
         console.error("Erreur lors de la création du post:", error);
         res.status(500).json({message: "Erreur du serveur"});
@@ -71,12 +73,10 @@ exports.deletePost = async (req,res)=>{
 exports.getAllPosts = async (req, res) => {
   try {
     let { limit, page } = req.query;
-
-    const userId = req.user.id; 
+    const userId = req.user.id;
 
     page = parseInt(page) || 1;
     limit = parseInt(limit) || 10;
-
     const offset = (page - 1) * limit;
 
     const postsResult = await pool.query(
@@ -87,25 +87,27 @@ exports.getAllPosts = async (req, res) => {
         posts.content,
         posts.created_at,
         posts.user_id,
+
         users.name AS author,
+        users.avatar,
 
-        -- total likes
-        COUNT(distinct likes.id) AS likes_count,
-        COUNT(DISTINCT comments.id) AS comments_count,
+        -- likes count propre
+        (SELECT COUNT(*) FROM likes WHERE likes.post_id = posts.id) AS likes_count,
 
-        -- si l'utilisateur a liké
+        -- comments count propre
+        (SELECT COUNT(*) FROM comments WHERE comments.post_id = posts.id) AS comments_count,
+
+        -- liked by current user
         EXISTS (
-          SELECT 1 FROM likes
-          WHERE likes.post_id = posts.id
+          SELECT 1 
+          FROM likes 
+          WHERE likes.post_id = posts.id 
           AND likes.user_id = $3
         ) AS liked
 
       FROM posts
       JOIN users ON users.id = posts.user_id
-      LEFT JOIN likes ON likes.post_id = posts.id
-      LEFT JOIN comments ON comments.post_id = posts.id
-      
-      GROUP BY posts.id, users.name
+
       ORDER BY posts.created_at DESC
       LIMIT $1 OFFSET $2
       `,
@@ -223,3 +225,37 @@ exports.filtre = async (req,res)=>{
        res.status(500).json({message:"erreur interne du serveur"}) 
     }
     }
+
+//get les posts d'un user
+exports.getPostsByUser = async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const postsResult = await pool.query(
+      `
+      SELECT 
+        posts.id,
+        posts.title,
+        posts.content,
+        posts.created_at,
+        users.name,
+        users.avatar
+      FROM posts
+      JOIN users ON posts.user_id = users.id
+      WHERE users.id = $1
+      ORDER BY posts.created_at DESC
+      `,
+      [userId]
+    );
+
+    return res.status(200).json({
+      data: postsResult.rows,
+    });
+
+  } catch (error) {
+    console.error("Erreur posts user:", error);
+    return res.status(500).json({
+      message: "Erreur du serveur"
+    });
+  }
+};

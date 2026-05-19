@@ -1,23 +1,54 @@
 const pool = require("../config/db");
 //creation d'un commentaire
 exports.createComment = async (req, res) => {
-try {
-    const {content} = req.body;
+  try {
+    const { content } = req.body;
     const user_id = req.user.id;
     const postId = req.params.postId;
 
-    if(! content || content.trim() === ""){
-        return res.status(400).json({message: "Le contenu du commentaire ne peut pas être vide"});
+    if (!content || content.trim() === "") {
+      return res.status(400).json({
+        message: "Le contenu du commentaire ne peut pas être vide",
+      });
     }
 
-    await pool.query("insert into comments (content, user_id, post_id) values ($1, $2, $3)", [content, user_id, postId]);
-    res.status(201).json({message: "Commentaire créé avec succès",content, user_id, postId});
+    // insertion de commentaire
+    const insertedComment = await pool.query(
+      `
+      INSERT INTO comments (content, user_id, post_id)
+      VALUES ($1, $2, $3)
+      RETURNING *
+      `,
+      [content, user_id, postId]
+    );
 
-} catch (error) {
+    const comment = insertedComment.rows[0];
+
+    // get tout les info coms et utilisateurs
+    const fullComment = await pool.query(
+      `
+      SELECT
+        comments.*,
+        users.name,
+        users.avatar
+      FROM comments
+      JOIN users
+      ON users.id = comments.user_id
+      WHERE comments.id = $1
+      `,
+      [comment.id]
+    );
+
+    return res.status(201).json(fullComment.rows[0]);
+
+  } catch (error) {
     console.error("Erreur lors de la création du commentaire:", error);
-    res.status(500).json({message: "Erreur du serveur"});
-}
-}
+
+    return res.status(500).json({
+      message: "Erreur du serveur",
+    });
+  }
+};
 
 // modification d'un commentaire
 exports.editComment = async (req,res)=>{
@@ -83,7 +114,8 @@ const commentResult = await pool.query(
     comments.content,
     comments.created_at,
     comments.user_id,
-    users.name
+    users.name,
+    users.avatar
   FROM comments
   JOIN users ON comments.user_id = users.id
   WHERE comments.post_id = $1
