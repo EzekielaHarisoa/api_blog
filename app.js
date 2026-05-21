@@ -19,7 +19,7 @@ app.use("/api/posts",postRoutes);
 app.use("/api/comments",commentRoutes);
 app.use("/api/likes",likeRoutes);
 app.use("/api/users",userRoutes);
-app.use("/api/follow",followRoutes);
+app.use("/api/suivi",followRoutes);
 app.use("/uploads", express.static("uploads"));
 
 

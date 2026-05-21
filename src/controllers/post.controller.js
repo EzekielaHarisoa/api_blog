@@ -229,8 +229,8 @@ exports.filtre = async (req,res)=>{
 //get les posts d'un user
 exports.getPostsByUser = async (req, res) => {
   try {
-    const userId = req.params.id;
-console.log("userId reçu =", userId);
+    const userId = req.params.userId;
+    console.log("userId reçu =", userId);
     const postsResult = await pool.query(
       `
       SELECT 
@@ -244,9 +244,7 @@ console.log("userId reçu =", userId);
       JOIN users ON posts.user_id = users.id
       WHERE posts.user_id = $1
       ORDER BY posts.created_at DESC
-      `,
-      [userId]
-    );
+      `, [userId]);
 
     return res.status(200).json({
       data: postsResult.rows,

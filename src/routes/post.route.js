@@ -8,7 +8,7 @@ router.post("/", authMiddleware, postController.createPost);
 router.get("/",authMiddleware, postController.getAllPosts);
 router.get("/search",authMiddleware,postController.searchPosts);
 router.get("/user",authMiddleware, postController.getAllPostByUser);
-router.get("/user/:userId",authMiddleware,postController.getPostsByUser)
+router.get("/userPost/:userId",authMiddleware,postController.getPostsByUser)
 router.get("/:id", postController.getPostById);
 router.put("/:id", authMiddleware, postController.editPost);
 router.delete("/:id", authMiddleware, postController.deletePost);
