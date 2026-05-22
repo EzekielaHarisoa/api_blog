@@ -1,6 +1,6 @@
 const pool = require("../config/db");
 
-// affichage du profile d'un user
+// affichage du profile de soi
 exports.getProfile= async(req,res)=>{
     try {
         const userId = req.user.id;
@@ -13,6 +13,21 @@ exports.getProfile= async(req,res)=>{
     } catch (error) {
         res.status(500).json({message: "Erreur du serveur lors de la récupération du profil"});
     }
+}
+
+// affichage du profile d'un autre user
+exports.getuserprofile = async(req,res)=>{
+  try {
+      const userId = req.params.userId;
+      const result = await pool.query("select id , name , email, bio , avatar ,created_at from users where id = $1",[userId])
+      if(result.rows.length === 0){
+          return res.status(404).json({message: "Utilisateur introuvable"});
+      }
+      
+      res.status(200).json(result.rows[0]);
+  } catch (error) {
+      res.status(500).json({message: "Erreur du serveur lors de la récupération du profil"});
+  }
 }
 
 // modification du profile d'un user

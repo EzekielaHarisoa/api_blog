@@ -229,8 +229,8 @@ exports.filtre = async (req,res)=>{
 //get les posts d'un user
 exports.getPostsByUser = async (req, res) => {
   try {
-    const userId = req.user.id;
-
+    const userId = req.params.id;
+console.log("userId reçu =", userId);
     const postsResult = await pool.query(
       `
       SELECT 
@@ -242,7 +242,7 @@ exports.getPostsByUser = async (req, res) => {
         users.avatar
       FROM posts
       JOIN users ON posts.user_id = users.id
-      WHERE users.id = $1
+      WHERE posts.user_id = $1
       ORDER BY posts.created_at DESC
       `,
       [userId]

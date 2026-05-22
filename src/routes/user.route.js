@@ -5,6 +5,7 @@ const authMiddleware = require("../middlewares/middleware");
 const uploadMiddleware = require("../middlewares/uploadMiddleware");
 
 router.get("/profile", authMiddleware, userController.getProfile);
+router.get("/profile/:userId", authMiddleware, userController.getuserprofile);
 router.put("/profile", authMiddleware, userController.updateProfile);
 
 router.post("/avatar",authMiddleware,uploadMiddleware.single("avatar"),userController.updateUserAvatar );
