@@ -5,12 +5,15 @@ exports.createPost = async (req, res) => {
     try {
         const {title, content} = req.body;
         const userId = req.user.id;
+        const image = req.file ? `/uploads/${req.file.filename}`:null;
+        console.log("BODY:", req.body);
+        console.log("FILE:", req.file);
         if (!title || !title.trim() || !content || !content.trim()) {
           return res.status(400).json({ message: "Titre et contenu sont obligatoires" });
        }
 
-        await pool.query("insert into posts (title, content, user_id) values ($1, $2, $3)", [title, content, userId]);
-        res.status(201).json({message: "Post créé avec succès"});
+        const result = await pool.query("insert into posts (title, content, user_id, image) values ($1, $2, $3, $4) returning * ", [title, content, userId,image]);
+        return res.status(201).json(result.rows[0]);
 
 
 
@@ -238,6 +241,7 @@ exports.getPostsByUser = async (req, res) => {
         posts.title,
         posts.content,
         posts.created_at,
+        posts.image,
         users.name,
         users.avatar
       FROM posts

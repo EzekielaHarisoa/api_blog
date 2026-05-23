@@ -52,3 +52,52 @@ exports.unfollowUser = async (req, res) => {
     });
   }
 };
+
+// verificatiion
+exports.isFollowing = async(req,res)=>{
+  try {
+    const followerId = req.user.id;
+    const { followId } = req.params;
+
+    const result = await pool.query(
+      `SELECT * FROM followers 
+       WHERE follower_id = $1 AND following_id = $2`,
+      [followerId, followId]
+    );
+    res.status(200).json({following: result.rows.length > 0});
+    
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({
+      message: "Error checking follow status"
+    });
+  }
+};
+
+// ceux qui te me
+exports.getFollowersCount = async (req,res)=>{
+  try {
+    const {userId} = req.params;
+    const result = await pool.query("select count(*) as count from followers where following_id = $1",[userId]);
+    return res.status(200).json({followers:Number( result.rows[0].count)});
+
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({erro:"Erreur de comptage following"});
+    
+  }
+}
+
+//ce que j'ai suivi
+exports.getFollowingCount = async (req,res)=>{
+   try {
+    const {userId} = req.params;
+    const result = await pool.query("select count(*) as count  from followers where follower_id = $1",[userId]);
+    return res.status(200).json({following :Number( result.rows[0].count)});
+
+  } catch (error) {
+    console.log(error)
+    return res.status(500).json({erro:"Erreur de comptage follow"});
+    
+  }
+} 
