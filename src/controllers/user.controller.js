@@ -23,7 +23,8 @@ exports.getuserprofile = async(req,res)=>{
       if(result.rows.length === 0){
           return res.status(404).json({message: "Utilisateur introuvable"});
       }
-      
+      console.log("USERID PARAM =", req.params.userId);
+      console.log("ROWS =", result.rows);
       res.status(200).json(result.rows[0]);
   } catch (error) {
       res.status(500).json({message: "Erreur du serveur lors de la récupération du profil"});

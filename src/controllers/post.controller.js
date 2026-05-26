@@ -90,6 +90,7 @@ exports.getAllPosts = async (req, res) => {
         posts.content,
         posts.created_at,
         posts.user_id,
+        posts.image,
 
         users.name AS author,
         users.avatar,
@@ -146,30 +147,72 @@ exports.getPostById = async (req,res) => {
 }
 
 //chercher un post
-exports.searchPosts = async (req,res)=>{
-    try {
+exports.searchPosts = async (req, res) => {
 
-        let {limit, page}= req.query;
-        page = parseInt(page)|| 1;
-        limit = parseInt(limit) || 10;
+  try {
 
-        if(limit > 50 )limit=10;
-        if(page < 1)page=1;
+    let { limit, page, query, category } = req.query;
 
-        const offset = (page - 1 )*limit;
+    page = parseInt(page) || 1;
+    limit = parseInt(limit) || 10;
 
-        const {query} = req.query;
-        if(!query || !query.trim()){
-            return res.status(400).json({message: "Le paramètre de recherche est obligatoire"});
-        }
+    if (limit > 50) limit = 10;
+    if (page < 1) page = 1;
 
-        const searchResult = await pool.query("select * from posts where title ilike $1 or content ilike $2 order by created_at desc limit $3 offset $4", [`%${query}%`, `%${query}%`,limit, offset]);
-        res.status(200).json({ limit, page ,data: searchResult.rows});
-    } catch (error) {
-        console.error("Erreur lors de la recherche des posts:", error);
-        res.status(500).json({message: "Erreur du serveur"});
+    const offset = (page - 1) * limit;
+
+    // Validation
+    if (!query || !query.trim()) {
+      return res.status(400).json({
+        message: "Le paramètre de recherche est obligatoire"
+      });
     }
-}
+    console.log("REQ QUERY =", req.query);
+
+    // Base SQL
+    let sql = `
+      SELECT *
+      FROM posts
+      WHERE (
+        title ILIKE $1
+        OR content ILIKE $1
+      )
+    `;
+
+    const values = [`%${query}%`];
+
+    // FILTRE CATEGORY
+    if (category && category !== "all") {
+      sql += ` AND category = $2`;
+      values.push(category);
+    }
+
+    sql += `
+      ORDER BY created_at DESC
+      LIMIT $${values.length + 1}
+      OFFSET $${values.length + 2}
+    `;
+
+    values.push(limit, offset);
+
+    const searchResult = await pool.query(sql, values);
+
+    res.status(200).json({
+      page,
+      limit,
+      total: searchResult.rowCount,
+      data: searchResult.rows
+    });
+
+  } catch (error) {
+
+    console.error("Erreur recherche :", error);
+
+    res.status(500).json({
+      message: "Erreur du serveur"
+    });
+  }
+};
 
 //cherher les posts d'un utilisateur
 exports.getAllPostByUser = async (req, res)=>{
