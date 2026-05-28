@@ -147,11 +147,11 @@ exports.getPostById = async (req,res) => {
 }
 
 //chercher un post
-exports.searchPosts = async (req, res) => {
 
+exports.searchPosts = async (req, res) => {
   try {
 
-    let { limit, page, query, category } = req.query;
+    let { limit, page, query, title } = req.query;
 
     page = parseInt(page) || 1;
     limit = parseInt(limit) || 10;
@@ -161,34 +161,61 @@ exports.searchPosts = async (req, res) => {
 
     const offset = (page - 1) * limit;
 
-    // Validation
-    if (!query || !query.trim()) {
+    if (
+      (!query || !query.trim()) &&
+      (!title || title === "all")
+    ) {
       return res.status(400).json({
-        message: "Le paramètre de recherche est obligatoire"
+        message: "Aucun filtre fourni"
       });
     }
-    console.log("REQ QUERY =", req.query);
 
-    // Base SQL
     let sql = `
-      SELECT *
+      SELECT 
+        posts.id,
+        posts.user_id,
+        posts.title,
+        posts.content,
+        posts.created_at,
+        posts.image,
+
+        users.name AS author,
+        users.avatar,
+
+        COUNT(likes.id)::int AS likes_count
+
       FROM posts
-      WHERE (
-        title ILIKE $1
-        OR content ILIKE $1
-      )
+
+      JOIN users ON posts.user_id = users.id
+      LEFT JOIN likes ON likes.post_id = posts.id
+
+      WHERE 1=1
     `;
 
-    const values = [`%${query}%`];
+    const values = [];
 
-    // FILTRE CATEGORY
-    if (category && category !== "all") {
-      sql += ` AND category = $2`;
-      values.push(category);
+    // search text
+    if (query && query.trim()) {
+      sql += `
+        AND (
+          posts.content ILIKE $${values.length + 1}
+          OR posts.title ILIKE $${values.length + 1}
+        )
+      `;
+      values.push(`%${query}%`);
+    }
+
+    // filter title
+    if (title && title !== "all") {
+      sql += `
+        AND posts.title ILIKE $${values.length + 1}
+      `;
+      values.push(`%${title}%`);
     }
 
     sql += `
-      ORDER BY created_at DESC
+      GROUP BY posts.id, users.id
+      ORDER BY posts.created_at DESC
       LIMIT $${values.length + 1}
       OFFSET $${values.length + 2}
     `;
@@ -205,7 +232,6 @@ exports.searchPosts = async (req, res) => {
     });
 
   } catch (error) {
-
     console.error("Erreur recherche :", error);
 
     res.status(500).json({
@@ -275,30 +301,61 @@ exports.filtre = async (req,res)=>{
 //get les posts d'un user
 exports.getPostsByUser = async (req, res) => {
   try {
+
     const userId = req.params.userId;
+
+    // utilisateur connecté
+    const currentUserId = req.user.id;
+
     console.log("userId reçu =", userId);
+
     const postsResult = await pool.query(
       `
       SELECT 
         posts.id,
+        posts.user_id,
         posts.title,
         posts.content,
         posts.created_at,
         posts.image,
-        users.name,
-        users.avatar
+
+        users.name AS author,
+        users.avatar,
+
+        COUNT(likes.id)::int AS likes_count,
+
+        EXISTS (
+          SELECT 1
+          FROM likes l2
+          WHERE l2.post_id = posts.id
+          AND l2.user_id = $2
+        ) AS liked
+
       FROM posts
-      JOIN users ON posts.user_id = users.id
+
+      JOIN users 
+      ON posts.user_id = users.id
+
+      LEFT JOIN likes
+      ON likes.post_id = posts.id
+
       WHERE posts.user_id = $1
+
+      GROUP BY posts.id, users.name, users.avatar
+
       ORDER BY posts.created_at DESC
-      `, [userId]);
+      `,
+      [userId, currentUserId]
+    );
 
     return res.status(200).json({
       data: postsResult.rows,
     });
 
   } catch (error) {
+
     console.error("Erreur posts user:", error);
+
     return res.status(500).json({
       message: "Erreur du serveur"
     });

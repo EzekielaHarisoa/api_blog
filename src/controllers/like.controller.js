@@ -51,7 +51,7 @@ exports.likePost = async (req, res) => {
       liked: !alreadyLiked,
       likesCount: Number(countResult.rows[0].count),
     });
-
+    refresh?.();
   } catch (error) {
     console.error("Erreur lors du like du post:", error);
 
