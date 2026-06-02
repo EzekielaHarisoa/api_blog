@@ -11,5 +11,7 @@
 ## How to run
 
 Backend:
-npm install
-npm run start
+1- install pnpm : npm install -g pnpm
+2- pnpm install
+3- pnpm run start
+
