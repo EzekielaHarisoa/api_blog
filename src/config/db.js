@@ -8,6 +8,10 @@ const pool = new Pool({
   },
 });
 
+pool.query("SELECT NOW()")
+  .then(() => console.log("✅ Neon connecté"))
+  .catch(err => console.error("❌ Neon erreur :", err));
+
 console.log("DATABASE_URL =", process.env.DATABASE_URL);
 
 module.exports = pool;
